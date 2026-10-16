@@ -8,6 +8,7 @@ SkylineGlass is a companion extension for [LiquidMusic by fraustiz](https://gith
 
 - The included city wallpaper in normal and fullscreen song views.
 - An in-app settings panel with a custom wallpaper picker, darkness and blur sliders, fixed accent colors, lyric brightness, and clock controls.
+- A saved Slide or Fade song transition setting for fullscreen playback.
 - A local 12-hour clock centered in the fullscreen top row, without seconds.
 - A stationary backdrop while synchronized lyrics scroll.
 - Upcoming lyrics at 70% white, the current line in full white, and past lines at 50% white.

@@ -3,12 +3,13 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
 (function(){const style=document.createElement("style");style.id="skylineglass-base";style.textContent="/* Fixed desktop wallpaper; keep LiquidMusic glass panels. */\nhtml body #lm-backdrop {\n background: var(--sg-wallpaper) center center / cover no-repeat !important;\n}\nhtml body #lm-backdrop .lm-backdrop-layer { display: none !important; }\nhtml:root[data-liquidmusic-mode=\"dark\"], html:root {\n --lm-bg-content: rgba(22, 22, 24, 0.62) !important;\n --lm-glass-thick-bg: rgba(30, 30, 32, 0.55) !important;\n}\n\n\n/* Put the fullscreen wallpaper on the stationary view, outside its scroll viewport. */\nhtml[data-cinema-npv-postEnter] .main-actionBar-ActionBarContainer {\n background: linear-gradient(rgba(0,0,0,var(--sg-darkness, .55)), rgba(0,0,0,var(--sg-darkness, .55))), var(--sg-wallpaper) center / cover no-repeat !important;\n}\nhtml[data-cinema-npv-postEnter] [style*=\"--cinema-mode-bg-color-from\"] {\n --cinema-mode-bg-color-from: transparent !important;\n --cinema-mode-bg-color-to: transparent !important;\n background: transparent !important;\n}\nhtml[data-cinema-npv-postEnter] [style*=\"--cinema-mode-bg-color-from\"] > :empty {\n background: none !important;\n box-shadow: none !important;\n}\n\n/* Lyrics readability: upcoming lines remain legible over the wallpaper. */\nhtml body [style*=\"--lyrics-color-background\"] {\n --lyrics-color-active: #fff !important;\n --lyrics-color-inactive: rgba(255,255,255,var(--sg-lyrics, .70)) !important;\n --lyrics-color-passed: rgba(255,255,255,.50) !important;\n --lyrics-color-messaging: rgba(255,255,255,var(--sg-lyrics, .70)) !important;\n text-shadow: 0 2px 5px rgba(0,0,0,.85) !important;\n}\nhtml body #lm-backdrop::after { background: rgba(0,0,0,var(--sg-darkness, .55)) !important; }\n\n/* Hide the collapsed right-side Now Playing pull-out tab. */\nbutton[aria-label=\"Show Now Playing view\"] { display: none !important; }\n\n/* Keep queue and device panels available without the collapsed sidebar surface. */\nhtml:not(:has([data-testid=\"control-button-queue\"]:is([aria-checked=\"true\"], [aria-pressed=\"true\"]), button[aria-label=\"Queue\"]:is([aria-checked=\"true\"], [aria-pressed=\"true\"]), button[aria-label=\"Connect to a device\"]:is([aria-checked=\"true\"], [aria-pressed=\"true\"], [aria-expanded=\"true\"]))) .Root__top-container > :has(button[aria-label=\"Show Now Playing view\"]) {\n display: none !important;\n}\n";document.documentElement.appendChild(style);})();
 (function skylineGlassSettings() {
   const KEY = 'skylineglass.settings.v1';
-  const defaults = {darkness:55, blur:0, lyrics:70, clock:true, hour12:true, accentMode:'album', accent:'#fa2d48'};
+  const defaults = {darkness:55, blur:0, lyrics:70, clock:true, hour12:true, accentMode:'album', accent:'#fa2d48', transition:'slide'};
   let prefs = {...defaults};
   try {
     const saved = JSON.parse(localStorage.getItem(KEY) || '{}');
     for (const k of ['darkness','blur','lyrics']) if (Number.isFinite(saved[k])) prefs[k] = Math.max(0,Math.min(k==='blur'?40:100,saved[k]));
     for (const k of ['clock','hour12']) if (typeof saved[k]==='boolean') prefs[k]=saved[k];
+    if (saved.transition === 'fade') prefs.transition='fade';
     if (saved.accentMode === 'fixed') prefs.accentMode='fixed';
     if (/^#[0-9a-f]{6}$/i.test(saved.accent)) prefs.accent=saved.accent;
   } catch (_) {}
@@ -149,6 +150,7 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     <label for="blur">Background blur</label><div class="range"><input id="blur" type="range" min="0" max="40"><output for="blur" id="blur-value" class="value"></output></div>
     <div class="row"><label for="accentMode">Accent color</label><select id="accentMode"><option value="album">Follow album</option><option value="fixed">Fixed color</option></select><input id="accent" type="color" aria-label="Choose fixed accent color"></div></section>
     <section><h2>Lyrics</h2><label for="lyrics">Upcoming lyric brightness</label><div class="range"><input id="lyrics" type="range" min="30" max="100"><output for="lyrics" id="lyrics-value" class="value"></output></div></section>
+    <section><h2>Playback</h2><div class="row"><label for="transition">Song transition</label><select id="transition"><option value="slide">Slide</option><option value="fade">Fade</option></select></div></section>
     <section><h2>Clock</h2><div class="row"><label for="clock">Show fullscreen clock</label><input id="clock" type="checkbox"></div><div class="row"><label for="hour12">Time format</label><select id="hour12"><option value="true">12 hour</option><option value="false">24 hour</option></select></div></section></main>
     <footer><span id="status" role="status">Changes apply instantly</span><button class="reset" id="reset">Reset settings</button></footer></dialog>`;
     dialog=shadow.querySelector('dialog');status=shadow.querySelector('#status');preview=shadow.querySelector('.preview');
@@ -157,6 +159,7 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
       shadow.getElementById('clock').checked=prefs.clock;
       shadow.getElementById('hour12').value=String(prefs.hour12);
       shadow.getElementById('accentMode').value=prefs.accentMode;
+      shadow.getElementById('transition').value=prefs.transition;
       shadow.getElementById('accent').value=prefs.accent;
       shadow.getElementById('accent').hidden=prefs.accentMode!=='fixed';
     }
@@ -165,7 +168,7 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     // Keep Spotify's playback shortcuts from firing while editing a control.
     dialog.addEventListener('keydown',e=>e.stopPropagation());
     dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
-    for(const k of ['darkness','blur','lyrics','clock','hour12','accentMode','accent']) {
+    for(const k of ['darkness','blur','lyrics','clock','hour12','accentMode','accent','transition']) {
       shadow.getElementById(k).addEventListener('input',e=>{
         prefs[k]=['darkness','blur','lyrics'].includes(k)?Number(e.target.value):k==='clock'?e.target.checked:k==='hour12'?e.target.value==='true':e.target.value;
         sync();apply();
@@ -324,4 +327,78 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     clock.remove();
   };
   update();
+})();
+
+/* Use one consistent song transition instead of Spotify's direction-dependent animation. */
+(function skylineGlassTransitions() {
+  if (window.__skylineGlassTransitionsCleanup) window.__skylineGlassTransitionsCleanup();
+  const selector = '.MIxkyEs3g0rBLYzrvIwv:has([style*="--cinema-mode-bg-color-from"])';
+  const style = document.createElement('style');
+  style.id = 'skylineglass-transitions';
+  style.textContent = `
+    html[data-sg-transition] ${selector} { transform:none!important; }
+    html[data-sg-transition] ${selector}[data-sg-motion] {
+      animation-duration:450ms; animation-timing-function:cubic-bezier(.22,.61,.36,1);
+      animation-fill-mode:both;
+    }
+    html[data-sg-transition="slide"] ${selector}[data-sg-motion="in"] { animation-name:sg-slide-in; }
+    html[data-sg-transition="slide"] ${selector}[data-sg-motion="out"] { animation-name:sg-slide-out; }
+    html[data-sg-transition="fade"] ${selector}[data-sg-motion="in"] { animation-name:sg-fade-in; }
+    html[data-sg-transition="fade"] ${selector}[data-sg-motion="out"] { animation-name:sg-fade-out; }
+    @keyframes sg-slide-in { from {translate:var(--sg-slide-from,100%) 0;opacity:1} to {translate:0 0;opacity:1} }
+    @keyframes sg-slide-out { from {translate:0 0;opacity:1} to {translate:var(--sg-slide-to,-100%) 0;opacity:1} }
+    @keyframes sg-fade-in { from {translate:0 0;opacity:0} to {translate:0 0;opacity:1} }
+    @keyframes sg-fade-out { from {translate:0 0;opacity:1} to {translate:0 0;opacity:0} }
+    @media (prefers-reduced-motion:reduce) {
+      html[data-sg-transition] ${selector}[data-sg-motion] {animation-duration:1ms;animation-name:sg-fade-in;}
+      html[data-sg-transition] ${selector}[data-sg-motion="out"] {animation-name:sg-fade-out;}
+    }
+  `;
+  document.documentElement.appendChild(style);
+  let current;
+  let direction = 1;
+  let frame;
+  function setMode() {
+    document.documentElement.dataset.sgTransition = window.SkylineGlassSettings?.transition === 'fade' ? 'fade' : 'slide';
+  }
+  function rememberDirection(event) {
+    const button = event.target.closest?.('button');
+    if (!button) return;
+    if (button.matches('[data-testid="control-button-skip-back"], [aria-label="Previous"]')) direction = -1;
+    if (button.matches('[data-testid="control-button-skip-forward"], [aria-label="Next"]')) direction = 1;
+  }
+  function update() {
+    frame = undefined;
+    const scenes = Array.from(document.querySelectorAll(selector));
+    const incoming = scenes.find(scene => scene !== current && !scene.hasAttribute('data-sg-motion'));
+    if (!incoming) { if (!scenes.length) current = undefined; return; }
+    // The initial fullscreen scene needs no song-change animation.
+    if (current) {
+      const from = direction === -1 ? '-100%' : '100%';
+      const to = direction === -1 ? '100%' : '-100%';
+      for (const scene of [current, incoming]) {
+        scene.style.setProperty('--sg-slide-from', from);
+        scene.style.setProperty('--sg-slide-to', to);
+      }
+      if (current.isConnected) current.setAttribute('data-sg-motion', 'out');
+      incoming.setAttribute('data-sg-motion', 'in');
+    }
+    current = incoming;
+    direction = 1;
+  }
+  function schedule() { if (frame === undefined) frame = requestAnimationFrame(update); }
+  const observer = new MutationObserver(schedule);
+  observer.observe(document.documentElement, {childList:true, subtree:true});
+  document.addEventListener('click', rememberDirection, true);
+  window.addEventListener('skylineglass-settings-change', setMode);
+  window.__skylineGlassTransitionsCleanup = () => {
+    observer.disconnect();
+    if (frame !== undefined) cancelAnimationFrame(frame);
+    document.removeEventListener('click', rememberDirection, true);
+    window.removeEventListener('skylineglass-settings-change', setMode);
+    for (const scene of document.querySelectorAll(selector)) scene.removeAttribute('data-sg-motion');
+    delete document.documentElement.dataset.sgTransition;
+    style.remove();
+  };
+  setMode(); update();
 })();
