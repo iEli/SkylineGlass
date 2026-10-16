@@ -239,6 +239,8 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     hour: 'numeric', minute: '2-digit', hour12: true
   });
   let currentHour12=true;
+  let observedHeader;
+  const layoutObserver = new ResizeObserver(update);
   function update() {
     const prefs=window.SkylineGlassSettings || {clock:true,hour12:true};
     if (!prefs.clock) {clock.style.display='none';return;}
@@ -270,8 +272,39 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
       clock.dateTime = now.toISOString();
       clock.setAttribute('aria-label', 'Current time: ' + label);
     }
-    clock.style.left = '50%';
     clock.style.display = 'block';
+    const header = Array.from(document.querySelectorAll('[style*="--header-text-color"]'))
+      .find(element => element.getBoundingClientRect().width > 0);
+    if (header !== observedHeader) {
+      layoutObserver.disconnect();
+      observedHeader = header;
+      if (header) {
+        layoutObserver.observe(header);
+        for (const child of header.children) layoutObserver.observe(child);
+      }
+    }
+    let center = innerWidth / 2;
+    if (header && header.children.length >= 2) {
+      const titleGroup = header.firstElementChild;
+      const title = titleGroup.querySelector('a, [data-encore-id="text"]') || titleGroup;
+      const controls = header.lastElementChild.getBoundingClientRect();
+      const titleRect = title.getBoundingClientRect();
+      const gapStart = titleRect.right + 24;
+      const gapEnd = controls.left - 24;
+      const halfWidth = clock.offsetWidth / 2;
+      // A sidebar narrows the toolbar without changing the viewport width.
+      // Center the clock in the actual free space between the title and controls.
+      const panelOpen = document.querySelector(
+        ':is([data-testid="control-button-queue"], button[aria-label="Queue"], button[aria-label="Connect to a device"]):is([aria-checked="true"], [aria-pressed="true"], [aria-expanded="true"])'
+      );
+      if (gapEnd - gapStart < clock.offsetWidth) {
+        clock.style.display = 'none';
+        return;
+      }
+      if (panelOpen) center = (gapStart + gapEnd) / 2;
+      center = Math.max(gapStart + halfWidth, Math.min(center, gapEnd - halfWidth));
+    }
+    clock.style.left = `${center}px`;
     const nav = document.querySelector('.Root__globalNav');
     const navBottom = !document.fullscreenElement && nav ? nav.getBoundingClientRect().bottom : 0;
     clock.style.top = `${Math.max(0, navBottom) + 42 - clock.offsetHeight / 2}px`;
@@ -283,6 +316,7 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
   document.addEventListener('scroll', update, true);
   window.__skylineGlassClockCleanup = () => {
     clearInterval(timer);
+    layoutObserver.disconnect();
     window.removeEventListener('resize', update);
     window.removeEventListener('skylineglass-settings-change', update);
     document.removeEventListener('fullscreenchange', update);
