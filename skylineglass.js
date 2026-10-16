@@ -86,6 +86,33 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     runtimeStyle.textContent=`html:root {
       --sg-darkness:${prefs.darkness/100}; --sg-lyrics:${prefs.lyrics/100}; ${accent}
     }
+    ${prefs.accentMode==='fixed' ? `
+    /* Cinema surfaces carry local artwork colors that override inherited accents. */
+    html[data-cinema-npv-postEnter] [style*="--cinema-mode-bg-color-from"] {
+      --text-subdued:${prefs.accent}!important;
+      --text-bright-accent:${prefs.accent}!important;
+      --essential-bright-accent:${prefs.accent}!important;
+    }
+    html[data-cinema-npv-postEnter] [style*="--header-text-color"] {
+      --header-text-color:${prefs.accent}!important;
+      --text-subdued:${prefs.accent}!important;
+      --text-bright-accent:${prefs.accent}!important;
+      --essential-bright-accent:${prefs.accent}!important;
+      --header-buttons-hover-bg:color-mix(in srgb, ${prefs.accent} 18%, transparent)!important;
+    }
+    /* Spotify gives video switches their own artwork-derived color set. */
+    button:is([aria-label="Switch to video"], [aria-label="Switch to audio"]) {
+      --text-base:var(--lm-on-accent)!important;
+      --essential-base:var(--lm-on-accent)!important;
+      background:var(--lm-accent)!important;
+      color:var(--lm-on-accent)!important;
+    }
+    button:is([aria-label="Switch to video"], [aria-label="Switch to audio"]):hover {
+      background:color-mix(in srgb, var(--lm-accent) 88%, white)!important;
+    }
+    button:is([aria-label="Switch to video"], [aria-label="Switch to audio"]):active {
+      background:color-mix(in srgb, var(--lm-accent) 85%, black)!important;
+    }` : ''}
 `;
     if(preview) preview.style.backgroundImage=`linear-gradient(rgba(0,0,0,${prefs.darkness/100}),rgba(0,0,0,${prefs.darkness/100})),url("${wallpaper}")`;
     if(save) {try {localStorage.setItem(KEY,JSON.stringify(prefs));message('Saved · changes are live');} catch(_) {message('Applied for this session. Settings storage is unavailable.');}}
