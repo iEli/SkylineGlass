@@ -7,13 +7,14 @@ SkylineGlass is a companion extension for [LiquidMusic by fraustiz](https://gith
 ## What you get
 
 - The included city wallpaper in normal and fullscreen song views.
+- An in-app settings panel with a custom wallpaper picker, darkness and blur sliders, fixed accent colors, lyric brightness, and clock controls.
 - A local 12-hour clock centered in the fullscreen top row, without seconds.
 - A stationary backdrop while synchronized lyrics scroll.
 - Upcoming lyrics at 70% white, the current line in full white, and past lines at 50% white.
 - A subtle text shadow and darker wallpaper for contrast.
 - LiquidMusic’s glass panels and floating player. Its accent colors still follow album artwork.
 
-The wallpaper is embedded in `skylineglass.js`. It is the package’s city image, not the recipient’s desktop wallpaper, and it does not automatically change with the desktop.
+The default city wallpaper is embedded in `skylineglass.js`. Use the **gear icon** at the bottom right of Spotify (including fullscreen) to open SkylineGlass settings. Appearance controls apply live and save locally across restarts. Changing or resetting the wallpaper automatically refreshes the Spotify view after saving, to avoid a stale backdrop. You can select a JPG, PNG, or WebP wallpaper up to 10 MB, restore the included city image, adjust darkness and blur, choose an album-based or fixed accent, brighten upcoming lyrics, and hide the clock or use 24-hour time. **Reset settings** restores the original look. Custom wallpapers are stored locally in Spotify’s browser storage; they are not uploaded or synced. Clearing Spotify browser data may reset these preferences. Wallpapers do not automatically follow the desktop.
 
 ## Install
 
