@@ -123,13 +123,7 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
   :host{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;color:#f8f9fc;color-scheme:dark;font-size:14px}
   *{box-sizing:border-box}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #a8caff;outline-offset:4px}
   #launcher{position:fixed;right:20px;bottom:24px;z-index:1000;display:flex;align-items:center;gap:0;border:1px solid #ffffff25;border-radius:50%;width:38px;height:38px;justify-content:center;padding:0;background:#20232bd9;backdrop-filter:blur(22px);color:#fff;box-shadow:0 4px 20px #0005;font-size:12px;font-weight:500;letter-spacing:.01em}
-  /* Follow Spotify's cinema toolbar state, including its reveal delay. */
-  #launcher{opacity:1;visibility:visible;transition:opacity .3s ease-out .5s,visibility 0s linear .5s}
-  :host-context(html[data-cinema-npv-postEnter]:has([style*="--header-text-color"].J0RhdTt4GEF31Paju6QD)) #launcher{
-    opacity:0;visibility:hidden;pointer-events:none;
-    transition:opacity .3s ease-out,visibility 0s linear .3s;
-  }
-  /* An open settings dialog stays usable even while Spotify's toolbar is idle. */
+  #launcher{opacity:1;visibility:visible;transition:opacity .1s linear}
   #launcher:hover{background:#353a46}#launcher svg{width:16px;height:16px}
   dialog{position:fixed;margin:auto;padding:0;width:460px;max-width:calc(100vw - 32px);max-height:calc(100vh - 48px);overflow:auto;border:1px solid #ffffff24;border-radius:24px;background:#17191ff2;color:#f8f9fc;box-shadow:0 24px 100px #0009;backdrop-filter:blur(32px)}
   dialog::backdrop{background:#0008;backdrop-filter:blur(8px)}
@@ -222,6 +216,36 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
     shadow.getElementById('reset').onclick=()=>restoreImage(true);
     const mount=()=>{const parent=document.fullscreenElement||document.body;if(host.parentElement!==parent)parent.appendChild(host);};
     mount();document.addEventListener('fullscreenchange',mount);
+    const launcher=shadow.getElementById('launcher');
+    function effectiveOpacity(element) {
+      let opacity=1;
+      for(let node=element;node && node!==document.documentElement;node=node.parentElement) {
+        const css=getComputedStyle(node);
+        if(css.display==='none' || css.visibility==='hidden') return 0;
+        opacity*=Number(css.opacity);
+      }
+      return opacity;
+    }
+    function syncLauncherVisibility() {
+      let opacity=1;
+      if(!dialog.open && document.documentElement.hasAttribute('data-cinema-npv-postEnter')) {
+        // Read the live surface, including parent fades, instead of a Spotify class name.
+        const headers=Array.from(document.querySelectorAll('[style*="--header-text-color"]'))
+          .filter(node=>{const r=node.getBoundingClientRect();return r.width>0 && r.height>0 && r.bottom>0 && r.top<innerHeight;});
+        const header=headers[headers.length-1];
+        if(header) opacity=effectiveOpacity(header);
+        const player=document.querySelector('.Root__now-playing-bar');
+        if(player) opacity=Math.min(opacity,effectiveOpacity(player));
+      }
+      const hidden=opacity<.01;
+      launcher.style.opacity=String(opacity);
+      launcher.style.visibility=hidden?'hidden':'visible';
+      launcher.style.pointerEvents=hidden?'none':'';
+      launcher.inert=hidden;
+    }
+    setInterval(syncLauncherVisibility,100);
+    dialog.addEventListener('close',syncLauncherVisibility);
+    syncLauncherVisibility();
     let currentScene;
     setInterval(()=>{mount();const next=document.querySelector('.main-actionBar-ActionBarContainer');if(next!==currentScene){currentScene=next;apply(false);}},1000);
     sync();apply(false);
