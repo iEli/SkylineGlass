@@ -123,6 +123,13 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
   :host{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;color:#f8f9fc;color-scheme:dark;font-size:14px}
   *{box-sizing:border-box}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #a8caff;outline-offset:4px}
   #launcher{position:fixed;right:20px;bottom:24px;z-index:1000;display:flex;align-items:center;gap:0;border:1px solid #ffffff25;border-radius:50%;width:38px;height:38px;justify-content:center;padding:0;background:#20232bd9;backdrop-filter:blur(22px);color:#fff;box-shadow:0 4px 20px #0005;font-size:12px;font-weight:500;letter-spacing:.01em}
+  /* Follow Spotify's cinema toolbar state, including its reveal delay. */
+  #launcher{opacity:1;visibility:visible;transition:opacity .3s ease-out .5s,visibility 0s linear .5s}
+  :host-context(html[data-cinema-npv-postEnter]:has([style*="--header-text-color"].J0RhdTt4GEF31Paju6QD)) #launcher{
+    opacity:0;visibility:hidden;pointer-events:none;
+    transition:opacity .3s ease-out,visibility 0s linear .3s;
+  }
+  /* An open settings dialog stays usable even while Spotify's toolbar is idle. */
   #launcher:hover{background:#353a46}#launcher svg{width:16px;height:16px}
   dialog{position:fixed;margin:auto;padding:0;width:460px;max-width:calc(100vw - 32px);max-height:calc(100vh - 48px);overflow:auto;border:1px solid #ffffff24;border-radius:24px;background:#17191ff2;color:#f8f9fc;box-shadow:0 24px 100px #0009;backdrop-filter:blur(32px)}
   dialog::backdrop{background:#0008;backdrop-filter:blur(8px)}
