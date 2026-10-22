@@ -433,3 +433,58 @@ const SKYLINE_DEFAULT_WALLPAPER = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQ
   };
   setMode(); update();
 })();
+/* Spotify 1.3.6 moved the player controls and seek bar into new wrappers. */
+(function skylineGlassPlayerLayout() {
+  document.getElementById('skylineglass-player-layout')?.remove();
+  const style = document.createElement('style');
+  style.id = 'skylineglass-player-layout';
+  const bar = '.Root__now-playing-bar [data-testid="now-playing-bar"]';
+  const row = `${bar} > div:has(> div > [data-testid="player-controls"])`;
+  const player = `${row} [data-testid="player-controls"]`;
+  const progress = `${player} > div:has([data-testid="playback-progressbar"])`;
+  style.textContent = `
+    ${bar} { background-image:none!important; }
+    ${row} {
+      display:grid!important;
+      grid-template-columns:auto minmax(0,1fr) auto!important;
+      grid-template-rows:minmax(0,1fr) 16px!important;
+      grid-template-areas:"controls lcd extra" "progress progress progress"!important;
+      column-gap:12px!important;
+      align-items:center!important;
+      width:100%!important; height:100%!important;
+      padding:7px 26px!important; box-sizing:border-box;
+      background-image:none!important;
+    }
+    ${row} > div:first-child {
+      grid-area:lcd!important; width:auto!important; min-width:0!important;
+      height:100%!important; padding:0 8px!important; z-index:1;
+    }
+    ${row} > div:has(> [data-testid="player-controls"]), ${player} {
+      display:contents!important;
+    }
+    ${player} > :is([data-testid="general-controls"],[data-testid="ad-controls"]) {
+      grid-area:controls!important; display:flex!important;
+      width:auto!important; margin:0!important; gap:10px!important; align-items:center!important;
+    }
+    ${row} > div:last-child {
+      grid-area:extra!important; width:auto!important; min-width:0!important;
+    }
+    ${progress} {
+      grid-area:progress!important; display:flex!important; align-items:center!important;
+      position:relative!important; width:auto!important; min-width:0!important;
+      height:16px!important; margin:0!important; padding:0 44px!important;
+      align-self:center!important;
+    }
+    ${progress} > :first-child, ${progress} > :last-child {
+      position:absolute!important; top:0!important; width:38px!important;
+      min-width:0!important; font-size:11px!important; line-height:16px!important;
+      font-variant-numeric:tabular-nums;
+    }
+    ${progress} > :first-child {left:0!important; text-align:left!important;}
+    ${progress} > :last-child {right:0!important; text-align:right!important;}
+    ${progress} > div:has([data-testid="playback-progressbar"]) {
+      flex:1!important; min-width:0!important;
+    }
+  `;
+  document.documentElement.appendChild(style);
+})();
